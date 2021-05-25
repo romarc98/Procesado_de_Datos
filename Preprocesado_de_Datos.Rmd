@@ -1,0 +1,1240 @@
+---
+title: "PREPROCESADO DE DATOS"
+author: "Marc Román Porras"
+date: "Mayo 2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  word_document:
+    toc: yes
+    toc_depth: '5'
+  pdf_document:
+    toc: yes
+    toc_depth: '5'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(knitr)
+opts_knit$set(root.dir=  'C:/Users/1/Desktop/MASTER/FUNDAMENTOS CIENCIA DE DATOS/ACTIVIDAD_2/Procesado_de_Datos')
+```
+
+El preprocesamiento de datos previo al análisis estadístico de estos es esencial. En muchos casos, las fuentes de información no son coherentes, completas y veraces, por lo que se hace imprescindible preparar los datos. No debemos pasarnos por alto este paso previo al análisis, ya que  saltar o reducir esta fase porque puede tener consecuencias muy graves en los resultados (sesgos, conclusiones equivocadas, ...).
+
+A continuación se disponen los apartados y subapartados de actividad en el desarrollo de la asignatura Tipología y ciclo de vida de los datos con la finalidad de preprocesar los datos del fichero "winequality-red.CSV" para posteriormente realizar una breve estadística descriptiva, modelado y si aplica, algún análisis de componentes principales (ACP) con algunas variables cuantitativas.
+
+** COMENTARIO: LA INSTALACIÓN DE LAS LIBRERÍAS QUE SE HAN USADO A LO LARGO DE LA PEC Y QUE PREVIAMENTE NO ESTABAN INSTALADAS, (INSTALL.PACKAGES()) SE HAN INTRODUCIDO ALLÍ DONDE DEBEN IR EN LOS DIFERENTES FRAGMENTOS DE R COMENTADOS YA QUE SINO LA GENERACIÓN DEL .HTML NO SE PUEDE LLEVAR A CABO),
+
+
+
+# 1. DESCRIPCIÓN DEL DATASET ¿Por qué es importante y qué pregunta/problema pretende responder?
+
+Se dice que la enología se caracteriza con el conjunto de conocimientos y técnicas relativos a los procesos de elaboración y crianza de vinos. Casi considerada una ciéncia, si más no un arte por todo lo que el vino aporta a nuestra cultura.
+
+Los enólogos, dichos como las personas que ponen en práctica el conocimiento vitivinícola, afirman que la acidez es una de las grandes virtudes del vino. De hecho en varias ocasiones hemos podido esuchar que un vino sin acidez, "es un vino muerto"... Pero, ¿Por qué es tan importante la acidez en un vino?
+
+Bien, la respuesta a esta pregunta se fundamenta en la procedencia de la uva, de una fruta, siendo los vinos ácidos por naturaleza. Asimismo, la acidez es imprescindible en el vino, tanto desde el punto de vista de su conservación, como de sus propiedades organolépticas y, en última instancia, su degustación. En este punto podemos formularnos otra pregunta; ¿de dónde procede exactamente la acidez, cuántos tipos de ácidos podemos encontrarnos en un vino y qué aporta cada uno de ellos?
+
+La respuesta a esta pregunta, puede ser extensa, puesto que a pesar del gran componente que aporta en acidez la uva, no toda procede de esta. Durante la fermentación, la conservación y el envejecimiento se pueden catabolizar o anabolizar nuevos compuestos ácidos, que además son partícipes en la formación de nuevas sustancias (polifenoles o compuestos cromático).
+
+En definitiva podemos afirmar que los ácidos tartárico, málico y cítrico, proceden principalmente de la uva, mientras que de la fermentación, conservación y el envejecimiento los más frecuentes son el láctico, succínico y acético.
+
+Pero, en este punto, ¿Por qué nos disponemos a hablar de acidez? La pregunta anterior tiene su respuesta en cuanto a la calidad del vino. Un vino debe su calidad en gran parte a su acidez, sin embargo los parámetros totales que influyen en la calidad de un vino son el ph, la acidez total, la acidez volátil y el ácido málico.
+
+Es en este punto, en base a los conceptos anteriores de calidad, ácidos y ph, donde entra nuestro dataset  winequality-red.csv. A partir de las definiciones de los ácidos comentados, así como del ph, vamos a llevar a cabo un análisis descriptivo y estadístico a lo largo de la actividad relacionando en términos generales calidad y acidez.
+
+Antes, debemos tener claro que define cada uno de los conceptos anteriores:
+
+ph: El ph es precisamente el coeficiente que indica el grado de acidez o basicidad de una solución acuosa. En términos vitinivícolas, no solo afecta a la acidez, sino tambiñen al color y conservación del vino. Sus valores típicos están entre 3.1 y 3.9.
+
+Acidez total: esta medida refleja la suma de todos los ácidos del vino, los valores normales oscilan entre 4,50 y 6,00 gr/l. (Volátil y no volátil).
+
+Acidez volátil: esta medida calcula el ácido acético de un vino. Los valores normales van de 0,30 a 0,60 g/l. Habitualmente escuchamos que un vino "está picado", este hecho se designa cuando presenta el vino una acidez volátil por encima de 1 g/l y aromas que recuerdan al vinagre y al barniz.
+
+Ácido málico: esta medida es la responsable de la sensación en boca ácida, de frescor. Los vinos tintos, que han realizado la fermentación maloláctica  para eliminar este ácido málico, presentan menos acidez de este tipo frente a blancos y rosados.
+
+Ácido cítrico: es un ácido poco abundante en la uva, de 150 a 300 mg/litro de mosto. Después es fermentado por las bacterias lácticas y desaparece.
+
+Una vez identificados los elementos que dotan de calidad a un vino, presentamos el dataset, disponiéndonos a extraer los parámetros anteriores, mediante un análisis estadístico y descriptivo.
+
+
+# 2.INTEGRACIÓN Y SELECCIÓN DE LOS DATOS A ANALIZAR
+
+En una primera instancia, el primer paso a llevar a cabo es la lecrtura del archivo .csv y la muestra de las 6 primeras filas de este:
+```{R}
+# Leo y almaceno la totalidad del fichero de vinos:
+base.datos <- read.csv("winequality-red.csv", header=TRUE)
+# Para verificar como R ha leído dicho archivo, podemos acceder a sus 5 primeras/últimas filas con head() y/o tail() y observar si la información es correcta.
+head(base.datos)
+```
+
+Una vez disponemos del archivo y de las capacidades de manipulado de este, antes de proceder con el análisis y las consideraciones vitivinícolas, el primer paso a llevar a cabo es la observación de los datos de los que disponemos. Para ello, podemos hacer uso de diversas cláusulas que R nos proporciona: 
+```{R}
+# Muestra de los datos:
+str(base.datos)
+```
+Como vemos, con str() observamos las clases de los datos, su nombre (vemos a qué se corresponde cada columna) y un ejemplo en cuanto a los datos en sí.
+
+A continuación, y siguiendo con la línea de lo expuesto en el apartado introductorio de esta actividad, vamos a proceder a reducir el tamaño inicial de la muestra de datos de la que disponemos tras la lectura del dataset. En este punto, nos quedaremos con aquellas variables que describen la acidez del vino y su calidad, y que por otro lado, pueden contrastar con dicha acidez (azúcar y alcohol), afectando a su calidad y gusto, para los posteriores análisis que llevemos a cabo. A continuación nos quedamos por tanto con los siguientes campos en subconjunto:
+
+fixed acidity: la mayoría de los ácidos involucrados con el vino o fijos o no volátiles (no se evaporan fácilmente). [numeric]. Rango 4.6-15.9 gr/L.
+
+volatile acidity: la cantidad de ácido acético en el vino, que en niveles demasiado altos puede provocar un sabor desagradable a vinagre. [numeric]. Rango 0.12-1.58 gr/L.
+
+citric acid: Encontrado en pequeñas cantidades, el ácido cítrico puede agregar 'frescura' y sabor a los vinos. [numeric]. Rango 0-1 gr/L.
+
+residual sugar: la cantidad de azúcar que queda después de que se detiene la fermentación, es raro encontrar vinos con menos de 1 gramo / litro... [numeric]. Rango 0.9-15.5 gr/L.
+
+alcohol: porcentage de alcohol presente en el vino. [numeric]. Rango entre 8.4 y 14.9 %.
+
+pH: describe qué tan ácido o básico es un vino en una escala de 0 (muy ácido) a 14 (muy básico). [numeric]. Rango entre 2.74-4.01.
+
+quality: variable de salida basada en datos de sensibilidad del vino. [integer]. Rango entre 0 y 10 en escala.
+
+
+En este punto, nos deshacemos de los demás campos disponiendo únicamente de los que nos interesan en nuestra muestra para proceder con el preprocesado y análisis:
+```{R}
+#install.packages("dplyr") # Lo instalo si no lo tengo
+library(dplyr)
+base.datos <- base.datos %>%
+select(c(quality,fixed.acidity, volatile.acidity, citric.acid, residual.sugar, alcohol, pH))
+head(base.datos, 10)
+```
+
+Una vez disponemos del subconjunto debidamente compuesto por las diferentes columnas, procedemos con la limpieza y el preprocesamiento de los datos.
+
+
+# 3. LIMPIEZA DE DATOS
+
+A lo largo de este apartado, generalmente vamos a comprovar para cada uno de los campos, que sus ceros, en caso de contener, se encuentren mínimamente justificados, que si disponen de valores missing, null o N/A, estos sean tratados/substituidos y/o aproximados de acuerdo a su naturaleza y de la homogenización del conjunto de datos en sí en cuando a valores y decimales.
+
+## 3.1. ¿Los datos contienen ceros o elementos vacíos? ¿Cómo gestionarías cada uno de estos casos?
+
+Primeramente, nos disponemos a observar si en nuestro conjunto total de datos de disponen campos missing. para ello llevamos a cabo el siguiente procedimiento:
+```{R}
+# Visualizo si existe algún valor null en la totalidad de variables:
+# install.packages("dplyr") # librería comentada. Descomentar si no se dispone de ella.
+library(dplyr)
+base.datos %>%
+select(everything()) %>%
+summarise_all(funs(sum(is.na(.))))
+```
+
+Como output, el fragmento de código anterior nos proporciona un dataFrame con la contención de un entero que nos muestra el total de valores null de las diferentes componentes en caso de que estas dispongan. Como vemos, ninguno de nuestros campos presenta missing values.
+
+Acto seguido, nos disponemos a observar la cantidad de valores "0" de los que dispone nuestro dataset columna por columna:
+```{R}
+# Número total de ceros en Quality:
+sum(base.datos$quality == 0)
+
+# Número total de ceros en Fixed Acidity (aacidez no volátil):
+sum(base.datos$fixed.acidity == 0)
+
+# Número total de ceros acidez volátil:
+sum(base.datos$volatile.acidity == 0)
+
+# Número total de ceros en ácido cítrico:
+sum(base.datos$citric.acid == 0)
+
+# Número total de ceros en Azúcar residual: 
+sum(base.datos$residual.sugar == 0)
+
+# Número total de ceros en Alcohol:
+sum(base.datos$alcohol == 0)
+
+# Número total de ceros en pH:
+sum(base.datos$pH == 0)
+```
+Como vemos, únicamente la variable de ácido cítrico dispone de valores 0, (132 en total) por lo que centraremos en este punto especial atención a observar como se distributye la variable y dar pié a justificar dichos ceros. Para ello, primeramente mostraremos como se distribuye en frecuencias dicha variable:
+```{R}
+# Distribución de frecuencias de la variable ácido cítrico:
+hist(base.datos$citric.acid)
+```
+
+Como vemos, el histograma aglutina buena parte de sus valores en torno al cero, definiendo una cola hacia la derecha... En este punto la pregunta que nos hacemos es la siguiente; ¿Es real/posible el hecho de disponer de vinos con ácido cítrico 0? ¿Qué supondría este hecho?
+
+En general la presencia de ácido cítrico en la uva es poco abundante. Su concentración oscila entre 0,1 y 1 g/l. En general el ácico cítrico es el encargado de aportar al vino frescura, sensaciones agradables, frutales y aromáticas.
+
+En este punto, conociendo dicha información, como vemos tiene sentido que dispongamos de vino con baja o nula concentración de ácido cítrico, puesto que en dichos casos se trataría de un vino no afrutado y algo más seco. Por tanto, mantenemos dichas consideraciones y valores nulos en dicha variable y procedemos con nuestro preprocesamiento.
+
+El último punto de este apartado va a consistir en la homogenización de los decimales de la totalidad de nuestras variables. Como hemos podido observar anteriormente, las columnas de ácido volátil, ácido cítrico y pH disponen de 2 decimales mietras ue las demás variables tan solo disponen de un valor decimal. Como no vamos a filtrar ni sacar conclusiones a nivel centésimal, vamos a redondear dichos valores a las décimas. para ello hemos implementado la siguiente función:
+```{R}
+# Homogenizo la totalidad del dataset:
+base.datos <- round(base.datos, 1)
+
+base.datos$volatile.acidity <- round(base.datos$volatile.acidity, 1)
+# Muestro el conjunto de datos al completo:
+head(base.datos)
+```
+
+Una vez disponemos de un conjunto homogéneo, sin missings y sin ceros, vamos a estudiar dato por dato (columna por columna) la presencia de valores extremos:
+
+
+## 3.2 Identificación y tratamiento de valores extremos:
+
+Los valores extremos son peligrosos en el estudio estadístico ya que pueden sesgar significativamente el análisis. Aún y así, es esencial entender y observar de qué tipo de valores extremos disponemos en función de la variable que estamos considerando en análisis. A continuación, analizamos variable por variable y procedemos de un tratamiento de extremos para cada caso particular:
+
+### VARIABLE CALIDAD
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$quality,main="Wine Quality")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$quality)$out
+```
+
+En este caso, para calidad, hemos obtenido multiples valores de 3 y 8, pero teniendo en cuenta que estamos midiendo en una escala del 0 al 10 la calidad de un vino, estos valores realmente no son extremos en relación a la variable que estamos midiendo ya que están totalmente dentro de rango y no tendría sentido anular estos valores... Por ello, a pesar de que el 3 y el 8 se representan como valores extremos en la distribución de la variable quality, no vamos a alterar dicha distribución y la dejamos como está. Para Calidad NO haremos tratamiento los Outliers!!!
+
+
+### VARIABLE FIXED ACIDITY
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$fixed.acidity,main="Fixed acidity")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$fixed.acidity)$out
+```
+
+Para Fixed acidity, si que tiene senido tratar los valores outliers que aparecen, ya que en este caso dicha variable no se rige por ningun rango de valores en los que debe estar contenida como era el caso de calidad. Por ese motivo, los valores que aparacen están totalmente alejados de los percentiles de distribución que muestra el boxplot, por lo que en este caso, eliminaremos dichos valores extremos de nuestra muestra, mediante la introducción de valores missing allí donde se den.
+
+Posteriormente, identificaremos dichos valores NA's introducidos y los substituiremos por el valor medio de la distribución de la variable como convención escogida y sbolución al problema de outliers. Este paso lo llevaremos a cabo en caso de disponer valores extremos que no nos interesen en nuestra distribución para las siguientes variables de análisis. 
+
+Procedemos con el tratamiento de outliers:
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_fixed <- base.datos$fixed.acidity >= 11.9
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$fixed.acidity[condicion_outliers_fixed] <- NA
+# Renombro NA's por valor medio:
+base.datos$fixed.acidity[is.na(base.datos$fixed.acidity)] <- mean(base.datos$fixed.acidity, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_fixed <- boxplot.stats(base.datos$fixed.acidity)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$fixed.acidity, main = "Box Plot Fixed Acidity",
+        ylab = "Valor de acidez",
+        col = "grey")
+```
+
+Observando el boxplot final tras la reestructuración vemos como el tratamiento de outliers ha sido correcto.
+
+
+### VARIABLE VOLATILE ACIDITY
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$volatile.acidity,main="Volatile acidity")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$volatile.acidity)$out
+```
+
+Para Volatile acidity, de nuevo tratamos los outliers del mismo modo que anteriormente:
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_vol<- (base.datos$volatile.acidity > 0.1) & (base.datos$volatile.acidity < 0.9)
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$volatile.acidity[!condicion_outliers_vol] <- NA
+# Renombro NA's por valor medio:
+base.datos$volatile.acidity[is.na(base.datos$volatile.acidity)] <- mean(base.datos$volatile.acidity, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_vol <- boxplot.stats(base.datos$volatile.acidity)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$volatile.acidity, main = "Volatile Acidity",
+        ylab = "Valor de acidez volátil",
+        col = "grey")
+```
+
+De nuevo, para la acidez volátil, observando el boxplot final tras la reestructuración vemos como el tratamiento de outliers ha sido correcto.
+
+### VARIABLE CITRIC ACID
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$citric.acid,main="Citric Acid")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$citric.acid)$out
+```
+
+Para citric acid, de nuevo tratamos los outliers del mismo modo que anteriormente:
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_cit<- base.datos$citric.acid >= 1
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$citric.acid[condicion_outliers_cit] <- NA
+# Renombro NA's por valor medio:
+base.datos$citric.acid[is.na(base.datos$citric.acid)] <- mean(base.datos$citric.acid, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_cit <- boxplot.stats(base.datos$citric.acid)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$citric.acid, main = "Citric Ácid",
+        ylab = "Valor de ácido cítrico",
+        col = "grey")
+```
+
+De nuevo, para la presencia de ácido cítrico, observando el boxplot, vemos como el tratamiento de outliers ha sido correcto.
+
+### VARIABLE AZÚCAR
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$residual.sugar,main="Sugar")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$residual.sugar)$out
+
+hist(base.datos$residual.sugar)
+```
+
+En este caso particular de azúcar, vemos como disponemos de muchos valores de outliers, por lo que hemos decidido representar el histrograma de frecuencias paea ver si los outliers se corresponden con una gran cantidad de valores o estos se encuentran distribuidos...
+
+Tras observar el histograma, vemos que hay muy poca de frecuencia de valores outliers por lo que vamos a proceder a tratarlos finalmente en la línea de los casos anteriores.
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_su<- (base.datos$residual.sugar> 0.9) & (base.datos$residual.sugar < 3.2)
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$residual.sugar[!condicion_outliers_su] <- NA
+# Renombro NA's por valor medio:
+base.datos$residual.sugar[is.na(base.datos$residual.sugar)] <- mean(base.datos$residual.sugar, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_su <- boxplot.stats(base.datos$residual.sugar)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$residual.sugar, main = "Sugar",
+        ylab = "Valor de azúcar",
+        col = "grey")
+
+# Por ultimo, represento el histograma para ver la repartición de frecuencias:
+hist(base.datos$residual.sugar)
+```
+
+Para el azúcar, observando tanto el boxplot final tras la reestructuración como el histograma, vemos como el tratamiento de outliers ha sido correcto.
+
+### VARIABLE ALCOHOL
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$alcohol,main="Alcohol")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$alcohol)$out
+```
+
+Para el alcohol, tratamos los outliers del mismo modo que anteriormente, eliminando aquellos que se denotan exteriormente al boxplot:
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_al<- base.datos$alcohol >= 13.2
+
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$alcohol[condicion_outliers_al] <- NA
+# Renombro NA's por valor medio:
+base.datos$alcohol[is.na(base.datos$alcohol)] <- mean(base.datos$alcohol, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_al <- boxplot.stats(base.datos$alcohol)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$alcohol, main = "Alcohol",
+        ylab = "Alcohol",
+        col = "grey")
+```
+
+Para el alcohol, observando el boxplot, vemos como el tratamiento de outliers ha sido correcto.
+
+
+### VARIABLE PH
+
+Representación del boxplot y de los valores outliers:
+```{R}
+# Definición de boxplot de muestra y obtención de valores atípicos:
+boxplot(base.datos$pH,main="PH")
+
+# Valor de los Outliers:
+boxplot.stats(base.datos$pH)$out
+```
+
+Para pH, tratamos los outliers del mismo modo que anteriormente, eliminando aquellos que se denotan exteriormente al boxplot tanto los mínimos como los máximos:
+```{R}
+# Establezco un límite el mínimo valor de outlier:
+condicion_outliers_p<- (base.datos$pH> 2.9) & (base.datos$pH < 3.7)
+# Asigno a aquellos valores que no cumplen la condición un valor NA:
+base.datos$pH[!condicion_outliers_p] <- NA
+# Renombro NA's por valor medio:
+base.datos$pH[is.na(base.datos$pH)] <- mean(base.datos$pH, na.rm = TRUE)
+# Muestro los outlietrs actuales una vez eliminados los casos anormales:
+outliers_p <- boxplot.stats(base.datos$pH)$out
+# Muestro el nuevo boxplot sin outliers anormales:
+boxplot(base.datos$pH, main = "pH",
+        ylab = "Valor de pH",
+        col = "grey")
+```
+
+Para esta última variable, de nuevo, observando el boxplot, vemos como el tratamiento de outliers ha sido correcto.
+
+Por último y antes de proceder con el análisis de datos, verificamos que después de la manipulación de outliers, no disponemos de ningún valor NA en nuestras distribuciones, ya que afectaría a la continuidad del proceso de análisis.
+```{R}
+# Compruevo de nuevo que no dispongo de valores NA:
+library(dplyr)
+base.datos %>%
+select(everything()) %>%
+summarise_all(funs(sum(is.na(.))))
+```
+
+El siguiente paso, tras haber tratado los datos en base a múltiples consideraciones (missings, outliers, homogeneidad en los datos, etc...) nos dispondremos a evaluar, de nuevo campo por campo, la distribución de estos y características relativas a su normalidad, varianza y relación entre variables. Debemos recordar, que la base del trabajo, tal y como presentamos en una primera instancia al inicio de este, se fundamenta en la composición de la calidad de un vino en base a la acidez de este y el contraste con otros aspectos como el dulzor de la uva (azúcar residual) y el alcohol del propio vino. 
+
+
+# 4. ANÁLISIS DE LOS DATOS
+
+A lo largo de este apartado, vamos a tratar cada una de las variables de nuestro dataset en relación a su Normalidad y su Homocedasticidad para la varianza para posteriormente (apartado 4.3) poder llevar a cabo una seríe de pruebas estadísticas en base a las variables que disponemos (regresiones, correlación, etc...). Para ello aplicaremos en una primera instancia diferentes técnicas tanto gráficas como estadísticas para el correcto tratamiento en base a estas dos consideraciones. Para esta série de pruebas, sobretodo en el análisis de la varianza, asumiremos que nuestro principal objetivo, tal y como ya se comentó en el inicio de la actividad, es la relación calidad-acidez del vino, por lo que compararemos cada variable con calidad. Los análisis, se van a componer del siguiente orden de evaluación:
+
+1.Representación del Histograma de cada distribución y comparación en base a una curva normal.
+
+2.Representación gráfica de la normalidad-QQPlot.
+
+3.Test Shapiro-Wilks para evaluar la normalidad. Dicho test basa su contraste   de hipótesis en: 
+      H0: La distribución es normal
+      H1: La distribución No es normal
+Evaluaremos cada hipótesis en función del p-value para un nivel de       significancia a priori del 0.05.
+   
+Para comprovar la normalizad, también podemos aplicar el Test de               Kolmogorov-Smirnov (KS). Test que compara dos distribuciones en base a una     hipótesis nula de igualdad entre éstas y una hipótesis alternativa de           diferencia. Para ello compararíamos nuestras distribuciones con                 distribuciones normales.
+  
+El hecho de que usemos KS para ratificar el valor del test de Shapiro en algunos casos, por un lado es debido a que éste último generalmente se usa para contrastar la normalidad en muestras ligeramente pequeñas. En R podemos usarlo con muestras con hasta 5000 elementos, pero es aconsejable y presenta mayor robustez para muestras realmente bajas en número de elementos. Por otro lado, no usamos únicamente el test de KS en una primera instancia ya que a pesar de que continuamente se alude a dicho test como válido para contrastar la normalidad, esto no es del todo cierto. KS asume que se conoce la media y varianza poblacional, cosa que en la mayoría de los casos no es posible, dotando por tanto de un test muy conservador y poco potente, pero que nos sirve para ratificar Shapiro.
+
+Por ende, en caso de querer ir más allá en el análisis de normalidad, tras Shapiro y KS que se representan como tests clásicos en los análisis de normalidad, podemos hacer uso del test de Lilliefors. Este último, aunque no tan común, asume que la media y varianza son desconocidas, estando especialmente desarrollado para contrastar la normalidad.
+
+   
+4. Test de Levene para evaluar la Homocedasticidad. Dicho test basa su          contraste de hipótesis en:
+      H0: Homogeneidad en la varianza (Homocedasticidad)
+      H1: NO Homogeneidad en la varianza (Heterocedasticidad)
+Evaluaremos de nuevo dicho test en base al p-value en un nivel de              significancia del 0.05.
+   
+El test de Levene es especialmente útil para llevar a cabo el análisis de la varianza en torno a dos variables, en nuestro caso comparando siempre con el caso de estudio de la variable calidad, ya que no es sensible a que las distribuciones deban presentar normalidad.
+  
+
+## 4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).
+
+Este apartado ya se ha llevado a cabo anteriormente debido a una prematura subselección de nuestro conjunto de datos por lo que en este punto ya disponemos de las variables que vamos a integrar a lo largo de nuestro análisis de datos y posteriormente en las diferentes pruebas estadísticas que vamos a llevar a cabo.
+
+
+## 4.2. Comprobación de la normalidad y homogeneidad de la varianza.
+
+En este punto, procedemos con la evaluación de los tests y gráficos comentados para cada una de nuestras variables.
+
+### VARIABLE CALIDAD
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$quality, freq = F,
+     ylab = "Valor de Calidad",
+     xlab = "Calidad del Vino", main = "")
+ 
+dz1 <- density(base.datos$quality)
+lines(dz1, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$quality), sd(base.datos$quality)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$quality)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$quality)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$quality, base.datos$quality)
+```
+
+Resultados variable calidad: 
+
+En base al análisis gráfico histograma vs normal, qqplot y al análisis mediante el Test de Shapiro, podemos concluir que la variable calidad no sigue una distribución Normal (p-value <<< 0 por lo que la hipótesis nula de Normalidad es falsa). En este caso no es necesario el uso del test KS para la ratificación de la No normalidad.
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso no aplica ya que estamos evaluando la propia variable Calidad. 
+
+
+### VARIABLE FIXED ACIDITY (acidez NO volátil)
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$fixed.acidity, freq = F,
+     ylab = "gr/L de acidez NO volátil",
+     xlab = "Acidez NO volátil", main = "")
+ 
+dz2 <- density(base.datos$fixed.acidity)
+lines(dz2, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$fixed.acidity), sd(base.datos$fixed.acidity)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$fixed.acidity)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$fixed.acidity)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$fixed.acidity,"pnorm", mean(base.datos$fixed.acidity), sd(base.datos$fixed.acidity))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$fixed.acidity)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$fixed.acidity, base.datos$quality)
+```
+
+Resultados variable fixed acidity: 
+
+En base al análisis gráfico histograma vs normal y qqplot a priori podríamos decir que la distribución presenta cierto grado de normalidad, aunque no suficiente para ser significativo ni en el Test de Shapiro, ni en KS, ni el Lilliefors. Por tanto no podemos concluir Normalidad en fixed acidity. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso tampoco nos presenta significancia y por ende Heterocedasticidad (p-value <<<<0).
+
+
+### VARIABLE VOLATILE ACIDITY (Acidez volátil)
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$volatile.acidity, freq = F,
+     ylab = "gr/L de acidez volátil",
+     xlab = "Acidez volátil", main = "")
+ 
+dz3 <- density(base.datos$volatile.acidity)
+lines(dz3, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$volatile.acidity), sd(base.datos$volatile.acidity)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$volatile.acidity)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$volatile.acidity)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$volatile.acidity,"pnorm", mean(base.datos$volatile.acidity), sd(base.datos$volatile.acidity))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$volatile.acidity)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$volatile.acidity, base.datos$quality)
+```
+
+Resultados variable Volatile acidity: 
+
+En base al análisis gráfico histograma vs normal y qqplot podemos observar como dicha variable no presenta signos de normalidad. Este hecho lo confirman los tests de Normalidad; Test de Shapiro, KS y Lilliefors. Por tanto no podemos concluir Normalidad en volatile acidity. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso si que nos indica significancia y por ende Homocedasticidad en la varianza en la comparación de la distribución con la variable quality. (p-value = 0.48 por lo que no podemos rechazar la hipótesis nula de homogeneidad en la varianza).
+
+
+### VARIABLE CITRIC ACID
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$citric.acid, freq = F,
+     ylab = "gr/L de acidez cítrica",
+     xlab = "Acidez cítrica", main = "")
+ 
+dz4 <- density(base.datos$citric.acid)
+lines(dz4, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$citric.acid), sd(base.datos$citric.acid)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$citric.acid)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$citric.acid)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$citric.acid,"pnorm", mean(base.datos$citric.acid), sd(base.datos$citric.acid))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$citric.acid)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$citric.acid, base.datos$quality)
+```
+
+Resultados variable citric acid: 
+
+En base al análisis gráfico histograma vs normal y qqplot podemos observar como dicha variable no presenta signos de normalidad. Este hecho lo confirman los tests de Normalidad; Test de Shapiro, KS y Lilliefors. Por tanto no podemos concluir Normalidad en citric acid. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso tampoco nos presenta suficiente significancia y por ende Heterocedasticidad (p-value = 0.00923), aunque en este caso, el p-value está cerca del valor 0.05 y por ende de haber podido asumir homocedasticidad.
+
+
+### VARIABLE RESIDUAL SUGAR
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$residual.sugar, freq = F,
+     ylab = "Azúcar",
+     xlab = "Azúcar", main = "")
+ 
+dz5 <- density(base.datos$residual.sugar)
+lines(dz5, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$residual.sugar), sd(base.datos$residual.sugar)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$residual.sugar)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$residual.sugar)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$residual.sugar,"pnorm", mean(base.datos$residual.sugar), sd(base.datos$residual.sugar))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$residual.sugar)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$residual.sugar, base.datos$quality)
+```
+
+Resultados variable residual sugar: 
+
+En base al análisis gráfico histograma vs normal y qqplot a priori podríamos decir que la distribución presenta cierto grado de normalidad, aunque no suficiente para ser significativo ni en el Test de Shapiro, ni en KS, ni el Lilliefors. Por tanto no podemos concluir Normalidad en residual sugar. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso si que nos indica significancia y por ende Homocedasticidad en la varianza en la comparación de la distribución con la variable quality. (p-value = 0.29 por lo que no podemos rechazar la hipótesis nula de homogeneidad en la varianza).
+
+
+### VARIABLE ALCOHOL
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$alcohol, freq = F,
+     ylab = "% de alcohol",
+     xlab = "Alcohol", main = "")
+ 
+dz5 <- density(base.datos$alcohol)
+lines(dz5, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$alcohol), sd(base.datos$alcohol)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$alcohol)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$alcohol)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$alcohol,"pnorm", mean(base.datos$alcohol), sd(base.datos$alcohol))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$alcohol)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$alcohol, base.datos$quality)
+```
+
+Resultados variable alcohol: 
+
+En base al análisis gráfico histograma vs normal y qqplot podemos observar como dicha variable no presenta signos de normalidad. Este hecho lo confirman los tests de Normalidad; Test de Shapiro, KS y Lilliefors. Por tanto no podemos concluir Normalidad en alcohol. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas tampoco nos indica significancia y por ende Homocedasticidad en la varianza en la comparación de la distribución con la variable quality. (p-value <<<<0 por lo que no podemos asumir la hipótesis nula de homogeneidad en la varianza).
+
+
+### VARIABLE pH
+
+Evaluación:
+```{R}
+# Definición de la librería Car:
+
+#install.packages("car")
+library(car) 
+
+# Representación de su distribución en base a una normal:
+hist(base.datos$pH, freq = F,
+     ylab = "escala de pH",
+     xlab = "pH", main = "")
+ 
+dz5 <- density(base.datos$pH)
+lines(dz5, col = "red", lwd = 3)
+ 
+curve(dnorm(x, mean(base.datos$pH), sd(base.datos$pH)),
+col = "blue", lwd = 3, add = TRUE)
+
+# Representación de su QQ-PLOT:
+library("car")
+qqPlot(base.datos$pH)
+
+# Test de Shapiro. Normalidad:
+shapiro.test(base.datos$pH)
+
+# Test Kolmogorov-Smirnov para la evaluación de normalidad:
+ks.test(x = base.datos$pH,"pnorm", mean(base.datos$pH), sd(base.datos$pH))
+
+# Test de Lilliefors Normalidad:
+# install.packages("nortest") # lo instalo si no dispongo del paquete
+library("nortest")
+lillie.test(base.datos$pH)
+
+# Test de Levene. Varianza con respecto a calidad:
+leveneTest(base.datos$pH, base.datos$quality)
+```
+
+Resultados variable residual sugar: 
+
+En base al análisis gráfico histograma vs normal y qqplot a priori podríamos decir que la distribución presenta cierto grado de normalidad, aunque no suficiente para ser significativo ni en el Test de Shapiro, ni en KS, ni el Lilliefors. Por tanto no podemos concluir Normalidad en la variable pH. (p-value <<< 0 en todos los casos por lo que la hipótesis nula de Normalidad es falsa).
+
+Por otro lado, el test de Levene para la evaluación de la igualdad de Varianzas en este caso si que nos indica significancia y por ende Homocedasticidad en la varianza en la comparación de la distribución con la variable quality. (p-value = 0.59 por lo que no podemos rechazar la hipótesis nula de homogeneidad en la varianza).
+
+
+## 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos. 
+
+En este apartado, en función de los datos y el objetivo del estudio se van a aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. eln el desarrollo del análisis de la calidad del vino entorno a múltiples variables de acidez, azúcar y alcohol.
+
+
+### Análisis de Correlación multivariable
+
+En términos genéricos, la correlación cuantifica el grado de relación entre dos variables. El cálculo de la correlación entre dos variables es independiente del orden o asignación de cada variable a X e Y, midiendo únicamente la relación entre ambas sin considerar dependencias. Generalmente y siguiendo en la línia en la que vamos a proceder, el análisis de correlación lineal precede a la generación del modelo de regresión lineal. Por tanto, en este punto vamos a estudiar/observar si las variables de nuestro dataset se encuentran correlacionadas en un análisis multivariante.
+
+El análisis de la correlación entre dos variables se basa en el cómputo de la covarianza estandarizada generando diferentes coeficientes de correlación. Existen diferentes coeficientes en función del tipo de variables de las que dispongamos (Pearson, Spearman, Kendal, etc...).
+
+Para poder elegir el coeficiente de correlación adecuado, se tiene que analizar el tipo de variables y la distribución que presentan. Este paso ya lo hemos llevado a cabo anteriormente, obteniendo como resultado que ninguna distribución presenta un comportamiento normal. Este hecho excluiria la posibilidad de utilizar el coeficiente de Pearson, uno de los más típicos, dejando como alternativas el de Spearman o Kendall. Sin embargo, como el coeficiente de Pearson tiene cierta robustez, a fines prácticos podemos usarlo siempre y cuando se tenga en cuenta este hecho en los resultados.
+
+En este punto, procedemos con el cómputo de la correlación mediante la obtención del coeficiente de correlación de Pearson para la totalidad de las variables. Asumiendo que este puede presentar cierta variabilidad al no disponer de normalidad en los datos, para aquellos valores de correlación más significantes, se llevará a cabo una ratificación con Speerman. Spearman es adecuando cuando la distribución de los datos no sigue una ley normal y son de naturaleza ordinal.
+
+Procedemos en una primera instancia:
+```{R}
+# Evaluación de la correlación entre las 3 variables:
+# install.packages("GGally") # instalo la librería en caso de no tenerla
+# install.packages("ggplot2")
+library(GGally)
+
+new_data <- data.frame(base.datos$quality, base.datos$fixed.acidity, base.datos$volatile.acidity, base.datos$citric.acid, base.datos$residual.sugar, base.datos$alcohol, base.datos$pH)
+
+ggpairs(new_data , lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+```
+
+Valores a considerar de correlación:
+
+alcohol y quality = 0.46 positiva
+fixed acidity y citric acid = 0.569 positiva
+fixed acidity y pH = -0.556 negativa
+citric acid y volatile acid = -0.545 negativa
+citric acid y pH = -0.518 negativa
+
+Ratificación con Speerman:
+```{R}
+# Alcohol vs quality:
+cor.test(x = base.datos$alcohol, y = base.datos$quality, method = "spearman")
+
+# Fixed acidity vs citric acid:
+cor.test(x = base.datos$fixed.acidity, y = base.datos$citric.acid, method = "spearman")
+
+# Fixed acidity vs pH:
+cor.test(x = base.datos$fixed.acidity, y = base.datos$pH, method = "spearman")
+
+# Citric acid vs volatile acid:
+cor.test(x = base.datos$citric.acid, y = base.datos$volatile.acidity, method = "spearman")
+
+# Citric acid vs pH:
+cor.test(x = base.datos$citric.acid, y = base.datos$pH, method = "spearman")
+```
+
+En todos los casos, vemos como la rho del test de Speerman presenta un valor significativo de correlación de acuerdo a los valores obtenidos con Pearson
+
+Por ende, concluimos esencialmente tras dicho análisis de correlación que la calidad está alineada con el grado de alcohol. Esto generalmente será debido a que ámbas variables presantan una escala (de 0 a 10 en el caso de quality y una escala percentual con un máximo de 15% en el caso de alcohol), por lo que ambas crecen de manera similar en magnitud.
+
+Por otro lado, vemos como la variable fixed acidity oresenta correlación con citric acid, hecho que podemos explicar, ya que como hemos visto antes, esta última variable se encuentra en el interior de los ácidos no volátiles del vino y por ende de fixed acidity. Fixed acidity, al igual que citric, presentan una buena correlación con el pH (escala de acidez), siguiendo un poco la línea comentada anteriormente en relación al ácido cítrico. 
+
+Por último, comentar que citric y volatile acid, presentan un grado de correlación negativa considerable a pesar de ir contenidos en grupos de acide distintos (volátil y no volátil).
+
+Por ende en relación a este análisis de la correlación, necesitaremos llevar a cabo un modelo de regresión lineal para tratar de dar explicación en relación a las acideces en la calidad del vino, ya que tras dicho análisis de correlación, no disponemos de significancia para considerar tal hecho.
+
+
+### Modelo de regresión lineal para calidad
+
+Tras haber llevado a cabo un aanálisis de correlación, vamos a ver como describe la acidez y afecta la acidez en la explicación de la calidad. En este punto, vamos a construir un modelo de regresión lineal mediante variables predictoras cuantitativas. Los modelos de regresión lineal, basan su fundamento en la predicción basada en la siguiente ecuación:
+
+Yi = (β0 + β1X1i + β2X2i + ⋯ +βnXni) + ei
+
+Donde Yi es el valor real observado del que disponemos, el conjunto (β0 + β1X1i + β2X2i + ⋯ +βnXni) se corresponde con el término predicho por nuestro modelo e ei (el error), se ascocia con el error cometido en el establezimiento de la propia regresión en una cuestión puramente geométrica del eje y.
+
+El procedimiento de generación del modelo va a ser el siguiente. En una primera instancia vamos a tratar la aproximación de la calidad (variable dependiente), mediante predictores de acidez (fixed acidity, volatile acidity y citric acid). Para ello y tras el propio análisis de correlación, evitaremos introducir precisamente citric acid y fixed acidity en el modelo conjuntamente ya que al estar el primero contenido en la magnitud del segundo, podría presentar un sesgo en el modelo por la dependencia entre dichas variables.
+
+procedemos por tanto con la creación de un primer modelo para explicar la calidad en base a la acidez volátil y no volátil:
+```{R}
+modelo_1 <- lm(base.datos$quality ~  base.datos$volatile.acidity + base.datos$fixed.acidity)
+
+summary(modelo_1)
+```
+
+
+Tras la generación del modelo, observamos las siguientes consideraciones:
+
+La parte volátil de la acidez explica bien en términos de significancia la calidad (p-value). Por otro lado, el nivel de significancia de la acidez no volátil cae por encima de 0.05, un valor elevado que nos indica que dicha variable no acaba de explicar bien la calidad. En este punto y dado que citric acid presenta un grado de dependencia con fixed acidity, vamos a componer un nuevo modelo con citric acid en lugar de fixed acidity para ver si de este modo el primero resenta una mayor significancia en el modelo en términos del p-value.
+
+Por otro lado, debemos  tener en cuenta que el valor del coeficiente de dependencia que hemos obtenido por parte del coeficiente de significancia R^2 es muy bajo, entorno a un 10%, pero esto lo trataremos posteriormente cuando lleguemos al modelo que más explique la calidad. 
+
+En este punto, se lleva a cabo la eliminación de fixed acidity y la introducción de citric acid:
+```{R}
+modelo_2 <- lm(base.datos$quality ~  base.datos$volatile.acidity + base.datos$citric.acid)
+
+summary(modelo_2)
+```
+
+Tras observar el resultado que nos presenta ssummary() en base a nuestro modelo de regresión, Citric acid y volatile acidity en este caso presentan significancia en este punto en términos del p-value descrito.
+
+A partir de aquí, y dado que el valor R^2 sigue siendo entorno al 10%, vamos a tratar de añadir variables para ajustar nuestro modelo en términos del coeficiente de temerninación R^2 y por ende llevar la bodad de ajuste de nuestro modelo.
+
+```{R}
+modelo_3 <- lm(base.datos$quality ~  base.datos$volatile.acidity + base.datos$citric.acid + base.datos$alcohol  + base.datos$pH)
+
+summary(modelo_3)
+```
+
+
+
+
+### Modelo de regresión logística:
+
+En este punto, tras el modelo de regresión lineal creado y debido a la poca significancia de este en la explicación de la calidad del vino, hemos decidido trasladar el enfoque de la calidad a un caso logístico. Partiendo de las diferencias entre ambas tipologías de regresiones sobre todo en términos del enfoque inicial del modelo, en este caso pasamos de la voluntad de predecir/explicar un valor de calidad con respecto a los predictores anteriores a la voluntad de clasificar, en función de los mismos predictores (o similares una vez creemos el modelo y veamos la significacia que cada uno aporta al modelo) el valor de calidad en términos de probabilidad, en base a inputs de las diferentes variables predictoras. 
+
+El modelo logístico se estabece de la siguiente manera:
+
+
+logit(calidad)= β0 + β1X1i + β2X2i + ⋯ +βnXni
+
+Por ende, la probalilidad, la podemos definir con la siguiente expresión:
+ 
+P(calidad) = exp(β0 + β1X1i + β2X2i + ⋯ +βnXni) / 1 + exp(β0 + β1X1i + β2X2i + ⋯ +βnXni) 
+
+En este punto, ya solo nos queda en un primer paso establecer/crear una variable dicotómica binomial en función de los valores de calidad para poder dotar la creación del modelo logístico. Para ello crearemos la variable dicotómica para calidad "calidad_BM" en base a los diferentes valores originarios de "quality". la manipulación de la variable se hará de la siguiente manera:
+
+Vino bueno. Rango [5, 10], recibirá un valor 1.
+Vino Malo; Rango [0, 5), recibirá un valor 0.
+
+El procedimiento es el siguiente:
+```{R}
+# Creo la nueva columna con valores iguales a quality:
+base.datos$calidad_BM <- base.datos$quality
+
+# Defino 1 y 0 en función del valor del quality:
+for (i in 1:nrow(base.datos)){
+  if (base.datos$calidad_BM[i] < 5){
+    base.datos$calidad_BM[i] = 0
+  }
+  if (base.datos$calidad_BM[i] >= 5){
+    base.datos$calidad_BM[i] = 1
+  }
+}
+
+# Defino el factor:
+base.datos$calidad_BM <- factor(base.datos$calidad_BM)
+
+# Mostramos algunas líneas de como se ha transformado la variable:
+head(base.datos$calidad_BM)
+
+# Mostramos como se han repartido los niveles 1 y 0:
+summary(base.datos$calidad_BM)
+```
+
+Tras la creación de la variable dicotómica, es importante verificar la independencia con respecto a las variables que introduciremos en el modelo como predictoras. En este caso, haremos uso del test Chi cuadrado para llevar a cabo una prueba de independencia entre cada una de las variables y de este modo observar si existe asociación entre las variables. 
+
+Test χ2 de Pearson:
+
+Ho: No hay asociación entre las variables A|B (Las
+variables son independientes)
+H1: Si hay asociación entre las variables A|B (Las variables no son independientes)
+```{R}
+# Test Chi-Cuadrado:
+
+# Variable dicotómica vs fixed acidity:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$fixed.acidity))
+
+# Variable dicotómica vs volatile acidity:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$volatile.acidity))
+
+# Variable dicotómica vs citric acid:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$citric.acid))
+
+# Variable dicotómica vs residual sugar:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$residual.sugar))
+
+# Variable dicotómica vs alcohol:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$alcohol))
+
+# Variable dicotómica vs pH:
+chisq.test(x = table(base.datos$calidad_BM,base.datos$pH))
+
+```
+
+Al llevar a cabo el test Chi-Squared en una prueba de independencia de cada una de las variables predictoras con respecto a calidad_BM, observamos como en la mayoría de los casos el p-value obtenido es inferior a un nivel de significancia 0.05 (excepto en fixed acitidy donde roza dicho nivel y si se puede identificar una No dependencia con respecto a calidad_BM) lo que nos lleva a determinar que dichas variables predictoras estan estadísticamente asociadas con las variable calidad_BM ya que podemos rechazar la hipótesis nula (H0) en casi todos los casos.
+
+Modelo de regresión logística cuantitativo:
+```{R}
+# Definición del modelo:
+modelo_glm_1 <- glm(base.datos$calidad_BM ~ base.datos$volatile.acidity + base.datos$citric.acid + base.datos$fixed.acidity + base.datos$alcohol  + base.datos$pH + base.datos$residual.sugar, family = binomial (link = logit))
+
+# Representación del modelo:
+summary(modelo_glm_1)
+```
+
+Tras obtener y observar el resultado del modelo, observamos como volatile acidity y alcohol nos presentan niveles de significancia que se salen de los márgenes de buena aproximación para nuestro modelo. (valores de p value superiores a 0.05). En este punto, decidimos eliminar dichos predictores del modelo y quedarnos con el resto en un modelo nuevo:
+```{R}
+# Definición del modelo:
+modelo_glm_2 <- glm(base.datos$calidad_BM ~ base.datos$citric.acid + base.datos$fixed.acidity  + base.datos$pH + base.datos$residual.sugar, family = binomial (link = logit))
+
+# Representación del modelo:
+summary(modelo_glm_2)
+```
+
+Los resultados que obtenemos en este nuevo modelo son favorables en términos del nivel de significancia individuales de cada una de las variables  Aún y así, a expensas de verificar la validez de dicho modelo en la predicción para la probabilidad dela calidad, vamos a llevar a cabo la evaluación del modelo en base a los siguientes tests de verificación:
+
+Likelihood ratio:
+```{R}
+# Diferencia de residuos
+dif_residuos <- modelo_glm_2$null.deviance - modelo_glm_2$deviance
+
+# Grados libertad
+df <- modelo_glm_2$df.null - modelo_glm_2$df.residual
+# p-value
+p_value <- pchisq(q = dif_residuos,df = df, lower.tail = FALSE)
+
+paste("Diferencia de residuos:", round(dif_residuos, 4))
+paste("Grados de libertad:", df)
+paste("p-value:", p_value)
+```
+El p-value obtenido (p-value = 1.64309868965872e-06) nos indica que el modelo entendido en su conjunto es significativo. Toso esto en base a la totalidad de los predictores aglutinados en base a la variable dependiente y a diferencia del summary() del modelo donde se considera la significatividad separada por cada variable.
+
+Por otro lado y de manera más robusta en esta caso que el test de Lilelihood, podemos evaluar la bondad de ajuste de nuestro modelo de regresión logística mediante el test de Hosmer-Lemeshow.
+
+Dicho test, se usa para comparar los valores previstos (esperados) por el modelo con los valores observados basándose en el siguiente contraste de hipótesis:
+
+HO: No hay diferencias entre los valores observados y los pronosticados. EL modelo está bien ajustado!
+
+H1: Hay diferencias entre los valores observados y los pronosticados. El modelo NO está bien ajustado.
+
+La hipótesis nula del test de Hosmer-Lemeshow es que no hay diferencias entre los valores observados y los valores pronosticados (el rechazo este test indicaría que el modelo no está bien ajustado).
+```{R}
+#install.packages("ResourceSelection") # Instalo el paquete si no dispongo de él
+library(ResourceSelection)
+# Definición del test:
+y <- base.datos$calidad_BM
+hoslem.test(modelo_glm_2$y, fitted(modelo_glm_2))
+```
+
+El p-value obtenido es de 0.51, y por ende superior a un valor típico de significación de 0.05, lo que nos indica que el modelo está bien ajustado ya que no podemos rechazar la hipótesis nula!
+
+Por tanto y como conclusión, encontramos que el modelo logístico formado por las variables predictras cuantitativas base.datos$citric.acid + base.datos$fixed.acidity  + base.datos$pH + base.datos$residual.sugar aproxima bien la calidad en términos de probabilidad y por ende, dados inputs de estas variables, podremos determinar en términos probabilísticos (entre 0 y 1) que calidad tenemos en un vino.
+
+Ejemplo de aplicación. Predicción del modelo logístico:
+
+```{R}
+# Coeficientes del modelo :
+coefficients(modelo_glm_2)
+```
+El resultado que obtenemos lo podemos ver de la siguiente forma:
+
+logit(calidad_BM)= 12.7875333 - 0.2908968 * fixed.acidity + 0.9045245 * residual.sugar + 3.3968270 * citric.acid  -2.9592687 * pH
+
+Por ende, la probalilidad, la podemos definir con la siguiente expresión:
+ 
+P(delay_sfp) = exp(12.7875333 - 0.2908968 * fixed.acidity + 0.9045245 * residual.sugar + 3.3968270 * citric.acid  -2.9592687 * pH) / 1 + exp(12.7875333 - 0.2908968 * fixed.acidity + 0.9045245 * residual.sugar + 3.3968270 * citric.acid  -2.9592687 * pH) 
+
+Donde operando para diferentes valores de cada una de las variables como ejemplo cogidos de los puntos más centrales a la media independiente de cada uno de ellos, obtenemos el valor de probabilidad:
+```{R}
+fixed <- 8
+sugar <- 2.1
+citric <- 0.2
+ph <- 3
+  
+exponente <- exp(12.7875333 + (-0.2908968 * fixed) + 0.9045245 * sugar + 3.3968270 * citric  + (-2.9592687 * ph))
+
+P_calidad = ((exponente) / (1 + exponente))
+paste("La probabilidad de obtener un vino de calidad con los valores introducidos es de : ", P_calidad * 100, " %")
+```
+
+En este punto, vemos que con valores medios de cada una de las variables del modelo, aplicando nuestro modelo de regresión logística, osbervamos como podemos obtener una calidad en el vino. 
+
+Dicha predicción, se entiende como la probabilidad de que valores introducidos como variables predictoras, muestren un valor 1 en la variable "calidad_BM", es decir P(X = x| 1), siendo X la variable aleatoria que define el conjunto total de Predictores introducidos y 1 el valor que toma la varible "Calidad_BM" en la predicción llevada a cabo.
+
+Aún y así, aunque la predicción haya sido buena en términos de probabilidad obtenida y la bondad de ajuste por Holmer y LikeliHood nos determinen un modelo ajustado en la predicción de la calidad del vino (en función de dicha variable dicotómica establecida) a partir de los predictores: fixed_acidity, residual_sugar, citric_acidity y pH, vamos a contrastar y ratificar dicha predicción mediante un contraste de hipótesis sobre los valores que hemos establecido en la variable Calidad_BM.
+
+### CONTRASTE DE HIPÓTESIS
+
+Siguiendo con la línea expuesta desde el inicio del análisis, a la que vamos a sumar las variables signiticativas que acabamos de observar a lo largo de los modelos de regresión, vamos a tratar la creencia de qué los vinos de calidad (Calidad_BM = 1 o quality >= 5) tienen una mayor acidez que los vinos de calidad baja (Calidad_BM = 0 o quality < 5). Para ello, veremos si los vinos de calidad disponen de mejor acidez NO volátil (fixed.acidity), ácido cítrico (citric.acid) que los vinos de una calidad baja.
+
+En este apartado se va a llevar a cabo un contraste de hipótesis de dos muestras independientes sobre el valor medio de fixed.acidity/citric.acid/volatile.acidity de una muestra de vinos de calidad y de una muestra de vinos de baja calidad con varianzas desconocidas por lo que deberemos, previamente a la realización del contraste de hipótesis, llevar a cabo un Test de varianzas para observar si las varianzas de ambas muestras son iguales o no con el fin de aplicar el estadístico correcto en el posterior contraste de hipótesis sobre la media de las variables.
+
+El primer paso a llevar a cabo previo a cualquier tipo de contraste de hipótesis en este caso es la obtención de las muestras de los vinos que presentan un valor más alto y más bajo de calidad, en función del valor de calidad indistintivamente:
+```{R}
+# Establezco una condición de calidad:
+condicion_calidad <- base.datos$quality >= 5
+
+# Aplico la condición de calidad sobre la muestra inicial y obtengo las dos muestras independientes:
+alta_calidad <- base.datos[condicion_calidad, ]
+baja_calidad <- base.datos[!condicion_calidad, ]
+
+paste("La muestra de ALTA calidad contiene n = ",nrow(alta_calidad), " campos")
+paste("La muestra de BAJA calidad contiene n = ",nrow(baja_calidad), " campos")
+```
+
+Una vez disponemos de las muestras y del valor n de cada una de ellas, procedemos con la pregunta de investigación.
+
+La estructura de dichas preguntas cobra importancia ya que van a dar pié al establecimiento de las hipótesis (nula y alternativa) correspondientes y de fijar en cierta manera que tipología de contraste (unilateral, bilateral) vamos a tener. Las preguntas son por tanto:
+
+Variable fixed.acidity: ¿El valor medio de la variable fixed.acidity de los vinos de calidad es significativamente mayor al valor medio de la variable fixed.acidity de los vinos de baja calidad?
+
+Variable citric.acid: ¿El valor medio de la variable citric.acid de los vinos de calidad es significativamente mayor al valor medio de la variable citric.acid de los vinos de baja calidad?
+
+Variable volatile.acidity: ¿El valor medio de la variable volatile.acidity de los vinos de calidad es significativamente mayor al valor medio de la variable volatile.acidity de los vinos de baja calidad?
+
+Queremos observar en cada caso, si el valor medio de cada variable para la muestra de buenos de caldiad es mayor al valor medio de cada variable para la muestra de vinos de baja calidad, lo que nos llevará a establecer un contraste de hipótesis Unilateral por la derecha como veremos más adelante.
+
+El siguiente punto sería la observación de la distribución de frecuencias de cada una de las variables en cada una de las muestras (alta_calidad y baja_calidad respectivamente) para observar si podemos asumir normalidad en las distribuciones y aplicar el test estadístico correspondiente  y/o asumir la teoría del Teorema del Límite central para evitar llevar a cabo un test no paramétrico en caso de no normalidad.
+
+
+```{R}
+# ALTA CALIDAD:
+
+# fixed.acidity
+hist(alta_calidad$fixed.acidity, freq = F, ylab = "Densidad", xlab = "Valor de la acidez NO volátil")
+lines(density(alta_calidad$fixed.acidity))
+
+# volatile.acidity
+hist(alta_calidad$volatile.acidity, freq = F, ylab = "Densidad", xlab = "Valor de la acidez volátil")
+lines(density(alta_calidad$volatile.acidity))
+
+# citric.acid
+hist(alta_calidad$citric.acid, freq = F, ylab = "Densidad", xlab = "Valor de la acidez cítrica")
+lines(density(alta_calidad$citric.acid))
+
+
+# BAJA CALIDAD:
+
+# fixed.acidity
+hist(baja_calidad$fixed.acidity, freq = F, ylab = "Densidad", xlab = "Valor de la acidez NO volátil")
+lines(density(baja_calidad$fixed.acidity))
+
+# volatile.acidity
+hist(baja_calidad$volatile.acidity, freq = F, ylab = "Densidad", xlab = "Valor de la acidez volátil")
+lines(density(baja_calidad$volatile.acidity))
+
+# citric.acid
+hist(baja_calidad$citric.acid, freq = F, ylab = "Densidad", xlab = "Valor de la acidez cítrica")
+lines(density(baja_calidad$citric.acid))
+
+```
+
+A pesar de únicamente haber mostrado los diagramas de frecuencias, podemos observar como un valor de Shapiro.test o cualquier otro test de normalidad, nos conllevaría a identificar una distribución NO normal... 
+
+Para evitar de la realización de Tests no paramétricos para llevar a cabo el contraste de hipótesis y todo lo que ello comporta, haremos cita de y uso del TEOREMA DEL LÍMITE CENTRAL. Dicho teorema establece que el contraste de hipótesis sobre la media de una muestra (que es precisamente el hecho que estamos evaluando en nuestro caso con las muestras de alta_calidad y baja_calidad) se aproxima a una distribución normal aunque la población original no siga dicha distribución (pues lo hemos visto con la representación de la densidad), siempre que el tamaño de la muestra “n” sea suficientemente grande, esto es, superior a 30 elementos.
+
+En nuestro caso, las muestras disponen de unos valores de n de 63 y 1536 respectivamente para baja_calidad y alta_calidad tal y como ya se ha mostrado con anterioridad. Por tanto, la aplicación del Teorema del Límite Central es válida y asumimos que las disribuciones se pueden aproximar a una distribución Normal para el contraste. Esto nos facilita el proceso significativamente...
+
+Una vez tenemos claras y definidas las muestras, las distribuciones que siguen las variables que vamos a analizar dentro de la muestra y las preguntas de investigación para cada variable sobre la que vamos a constatar en contraste de hipótesis, procedemos con el establecimiento de las hipótesis Nula y alternativa.
+
+
+H0: Media de los valores de fixed.acidity/volatile.acidity/citric.acid en alta_calidad = Media de los valores de fixed.acidity/volatile.acidity/citric.acid en baja_calidad
+
+H1: Media de los valores de fixed.acidity/volatile.acidity/citric.acid en alta_calidad > Media de los valores de fixed.acidity/volatile.acidity/citric.acid en baja_calidad
+
+Como vemos, nos encontramos frente un contraste unitaleral por la derecha. En este punto, procedemos con el contraste de hipótesis.
+
+Llegados a este punto, vamos a proceder con el dicho contraste de hipótesis bajo las consideraciones que hemos ido justificado en los pasos previos de este ejercicio. Antes, debido al desconocimiento de la varianza de las muestras, debemos proceder con un Test de Varianzas para cada muestra. Para aplicar el estadístico adecuado, hay que comprobar si las varianzas de las dos poblaciones son iguales o no. Para ello, aplicamos primero el test de igualdad de varianzas.
+
+En este punto vamos a suponer una hipótesis nula y alternativa sobre el valor de la varianza de cada población sobre cada una de las 3 variables:
+
+H0: (varianza alta_calidad[fixed.acidity/volatile.acidity/citric.acid]) = (varianza baja_calidad[fixed.acidity/volatile.acidity/citric.acid])
+
+H1: (varianza alta_calidad[fixed.acidity/volatile.acidity/citric.acid]) != (varianza baja_calidad[fixed.acidity/volatile.acidity/citric.acid])
+
+En este punto procederemos con el Test de Varianzas para cada una de las variables anteriores sobre ambas muestras:
+```{R}
+funcion_varianzas <- function(alta, baja){
+   
+   # Definición de variables necesarias para el cómputo:
+   alfa = 0.05
+   mean1 <- mean(alta) # media de la variable en la muestra alta calidad
+   mean2 <- mean(baja) # media de la variable en la muestra baja calidad
+   n1 <- length(alta)
+   n2 <- length(baja)
+   s1 <- sd(alta) # d.estándar 
+   s2 <- sd(baja) # d.estándar 
+   
+   # Muestro por pantalla las variables anteriores:
+   print("Mean_Alta|Mean_Baja|S_Alta|S_Baja|Total_muestra_Alta|Total_muestra_Baja")
+   print(c(mean1, mean2, s1, s2, n1, n2))
+   
+   
+   # Calculo estadístico y valores de intérvalo inferior y superior:
+   fobs = s1^2/s2^2
+   fcritL <- qf(alfa/2, df1=n1-1, df2=n2-2)
+   fcritU <- qf(1-alfa/2, df1=n1-1, df2=n2-2)
+   pvalue <- min(pf(fobs, df1=n1-1, df2=n2-2, lower.tail = FALSE), pf(fobs, df1=n1-1, df2=n2-2))*2
+   
+   # Muestro el resultado por pantalla:
+   print("Fobs|LOW|UPPER|P_VALUE")
+   print(c( fobs, fcritL, fcritU, pvalue))
+   print("###########################################################################################")
+   
+}
+
+
+# EJECUCIÓN DE LA FUNCIÓN PARA CADA VARIABLE:
+
+# FIXED ACIDITY:
+funcion_varianzas(alta_calidad$fixed.acidity, baja_calidad$fixed.acidity)
+
+# VOLATILE ACIDITY:
+funcion_varianzas(alta_calidad$volatile.acidity, baja_calidad$volatile.acidity)
+
+# CITRIC ACID:
+funcion_varianzas(alta_calidad$citric.acid, baja_calidad$citric.acid)
+```
+
+En todos los casos el valor del estadístico fobs cae dentro del intérvalo de confianza del 95% además de que el valor del valor p (p value) en todos los casos es mayor que el nivel de significancia. Estos hechos nos llevan a aceptar la hipótesis nula y por tanto a disponer de varianzas iguales - HOMOCEDASTICIDAD. 
+
+En este punto nos disponemos a realizar el contraste de hipótesis ciertamente sobre el valor de las variables mediante la función t.test() una vez hemos conocido que debemos tratar con varianzas desconocidas diferentes (var.equal = TRUE) y por ende con el estadístico que este supone implementar de acuerdo al contraste unilateral (greater) que deseamos implementar.
+```{R}
+# Definición de los contrastes de hipótesis:
+
+# Contraste acidez NO volátil:
+t.test(alta_calidad$fixed.acidity, baja_calidad$fixed.acidity,alternative="greater", var.equal=TRUE)
+
+# Contraste acidez volátil:
+t.test(alta_calidad$volatile.acidity, baja_calidad$volatile.acidity,alternative="greater", var.equal=TRUE)
+
+# Contraste acidez cítrica:
+t.test(alta_calidad$citric.acid, baja_calidad$citric.acid,alternative="greater", var.equal=TRUE)
+```
+
+En este punto y tras obtener el resultados de los contrastes podemos concluir con lo siguiente:
+
+Para un nivel de significancia del 0.05, las variables fixed acidity (p-value = 0.02) y citric acid (p-value <<<< 0) como vemos presentan un p-value menor al nivel de significancia (muy considerable para citric acid) que nos lleva a rechazar la hipótesis nula y por ende a disponer que el valor medio de los valores de fixed.acidity y citric.acid en la muestra de alta_calidad es superior al valor medio de fixed.acidity y citric.acid en la muestra baja_calidad.
+
+Esta conclusión, ratifica la consideración de estas dos variables en la predicción lelvada a cabo mediante el modelo de regresión logístico anterior àra la predicción de la calidad del vino, donde ya vimos, que estas dos variables aportaban significancia al modelo y por tanto eran buenos predictores de calidad.
+
+Por otro lado, el p-value del contraste para la variable volatile.acidity, es superior al nivel de significancia, lo que nos lleva a aceptar la hipótesis nula y descartar que el valor medio de volatile.acidity es superior en vinos de buena calidad en comparación con vinos de una calidad inferior.
+
+Como conslusión tras todas las pruebas llevadas a cabo, podemos interpretar como la variable fixed.acidity y la variable citric.acid (esta última contenida dentro del mismo valor de acidez NO volátil del vino y por ende de fixed.acidity) se asocian con la intrepretación de la calidad del vino, pudiendo influir significativamente en esta y ratificando la idea general presentada en la introducción de la actividad cuando se expuso acerca de la calidad del vino.
+
+
+# 5. REPRESENTACIÓN DE LOS RESULTADOS
+
+A continuación vamos a mostrar nuestro conjunto de datos en este punto de la actividad una vez llevados a cabo la totalidad de la manipulación de este para las diferentes pruebas estadísticas.
+
+Nuestro Dataset al completo, en términos de tipología, valor tratado de las variables y representación de la frecuencia de cada una de ellas es el siguiente:
+```{R}
+# Observación de nuestro Dataset final:
+head(base.datos, 30)
+
+# Tipología de datos de cada una de las variables:
+str(base.datos)
+
+# Summary de la información estadíscica bácica de cada variable:
+summary(base.datos)
+
+# Representación en frecuencias (histogramas) de cada una de las variables que numéricas conforman el dataset :
+hist(base.datos$fixed.acidity)
+hist(base.datos$volatile.acidity)
+hist(base.datos$citric.acid)
+hist(base.datos$residual.sugar)
+hist(base.datos$alcohol)
+hist(base.datos$pH)
+hist(base.datos$quality)
+
+# Representación de la variable calidad_BM dicotómica por niveles:
+table(base.datos$calidad_BM)
+```
+
+A lo largo del análisis también se ha ido mostrando allí donde son necesarios otros plots/gráficos y documentación tanto visual como numérica de las diferentes variables que conforman la totalidad de nuestro dataset, por lo que realmente, la representación visual de la totalidad del Dataset no puede limitarse únicamente a dicho apartado, siendo este únicamente a modo resumen después del análisis llevado a cabo y las consideraciones pertinentes.
+
+
+# 6. RESOLUCIÓN DEL PROBLEMA. CONCUSIONES
+
+En línea con lo que se ha ido considerando y verificando a lo largo de la totalidad del documento y bajo las consideraciones inicialmente planteadas en torno a la calidad del vino según fuentes vitivinícolas fiables y de interés, presentamos la siguiente conslusión:
+
+En diversas fuentes, encontramos como la acidez en un vino se puede asociar con la calidad de este. "Un vino debe su calidad en gran parte a su acidez". A lo largo del toda la actividad, se ha trabajado en este concepto en base a las variables de las que disponíamos en nuestro conjunto de datos que podían influir en problema de investigación.
+
+Concretamente, se escogió un subconjunto del mismo dataset para llevar a cabo la verificación y el análisis estadístico, no solo formado por las variables descriptoras de la acidez (fixed.acidity, volatile.acidity y citric.acid) sinó también por las variables pH, residual.sugar estos últimos parámetros se especulaba a través de considerables fuentes que también influyen en la calidad de un vino.
+
+Una vez dispusimos de dichas variables, las tratamos en términos de Datos para poder llevar a cabo 4 pruebas estadísticas básicas para poder referirnos a nuestro problema inicial de investigación.
+
+Primeraente, evaluamos la correlación total entre la totalidad de las variables de nuestro subconjunto, donde pudimos ver el grado de asociadión de estas, obteniendo pares de variables emparejadas y preparándo el análisis para la imposición de un modelo de regrasión lineal capaz de expliucar la calidad del vino.
+
+El modelo lineal resultó con apenas una explicación de la calidad de un 27 % según el ajuste del modelo, lo que corresponde un valor bajo en términos de bondad de ajuste para un modelo pudiendo concluir que a priori, no podemos explicar calidad "quality" con la significancia marcada y introducida ni por las variables ácidas, ni por las demás añadidas posteriormente (según las consideraciones alcohol-acidez y azúcar-acidez que se comentaron inicialmente en la actividad y que podrían influir en la calidad de los vinos), en un modelo lineal múltiple. 
+
+En este punto, nos dispusimos a dicotomizar la variable quality en un nivel binario mediante la instauración de la variable calidad_BM. En este punto, pudimos llevar a cabo un modelo logístico, que tratase de indicarlos la probalilidad, en este caso, de obtener un vino de calidad (valor 1 de calidad_BM) en función de una serie de predictores, en línea a los que consideramos para formar el modelo lineal...
+
+Tras la evaluación logística y la bondad de ajuste de modelo en términos de significancia, encontramos un modelo donde las variables fixed.acidity, citric.acid, residual.sugar y pH nos proporcionaban una correcta aproximación de la calidad de un vino. En este punto, nos acercamos más a la consideración de que la calidad en un vino venía asociada, en buena parte, a la calidad de este según las variable de acidez presentes en el modelo...
+
+En este punto y focalizados en rebatir y/o ratificar las consideraciones iniciales tomadas desde diversas fuentes vitivinícolas en relación a la relación acidez-calidad de un vino y el resultado de la predicción logística, nos hemos dispuesto a evaluar, en una última instancia, un contraste de hipótesis sobre muestras referentes a alta calidad y baja calidad donde hemos visto y refutado hipótesis en relación a las 3 variables de acidez que disponíamos en nuestro dataset. Como resultado, hemos podido ver, en línea con la bodad del modelo logístico, como las variables de acidez fixed.acidity y citric.acid (esta última contenida dentro del mismo valor de acidez NO volátil del vino y por ende de fixed.acidity) se asocian con la intrepretación de la calidad del vino, pudiendo influir significativamente en esta y ratificando la idea general presentada en la introducción de la actividad cuando se expuso acerca de la calidad del vino.
+
+Por otro lado, no podemos concluir con la misma idea para el nivel de acidez relativo a la acidez volátil de un vino (ácidos lácticos, acéticos, etc...), donde no hemos obtenido suficiente significancia para relacionas su justificación en la calidad de un vino, a priori, con los datos de los que hemos dispuesto de nuestro Dataset.
+
+
+# 7. GUARDADO DEL FICHERO LIMPIO (CLEAN)
+
+En este punto y por último, nos disponemos a guardar nuestro fichero base.datos debidamente modificado a lo largo de la actividad:
+```{R}
+# Defino la sentencia de guardado del documento en el directorio actual:
+write.csv(base.datos, file = './WINE_CLEAN.csv')
+```
